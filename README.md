@@ -1,10 +1,42 @@
-# Voiceprint 声纹音乐
+<p align="center">
+  <img width="120" src="./screenshots/logo.png" alt="Voiceprint 声纹音乐 Logo">
+</p>
 
-> MacBook Pro 音乐播放器 **设计稿**（HTML 原型，1280×800 桌面画幅）
->
-> 一套白底极简、以「声纹」为视觉主角的音乐播放器界面设计。
+<h1 align="center">Voiceprint 声纹音乐</h1>
 
-本仓库是**设计稿 / 视觉原型**，不是可运行的播放器程序：页面是静态 HTML/CSS/少量演示用 JS，用于确认视觉、动效与交互走向。真实音源、歌词内核、本地存储等属于后续实现阶段，不在本仓库范围内。
+<p align="center">
+  <img src="https://img.shields.io/badge/设计稿-12%20屏-171717" alt="设计稿 12 屏">
+  <img src="https://img.shields.io/badge/平台-macOS-0071e3" alt="macOS">
+  <img src="https://img.shields.io/badge/风格-白底极简-ffffff?style=flat&labelColor=171717" alt="白底极简">
+  <img src="https://img.shields.io/badge/动态歌词-逐字点亮-ff8a5b" alt="动态歌词">
+  <img src="https://img.shields.io/badge/状态-设计定稿-2ea043" alt="设计定稿">
+</p>
+
+<p align="center">把音乐做成看得见的声纹，用最安静的白底衬托出来。</p>
+
+<p align="center">
+  <a href="./screenshots/hero.png"><img width="100%" src="./screenshots/hero.png" alt="Voiceprint 界面预览：启动页 / 首页 / 播放页 / 全屏歌词"></a>
+</p>
+
+本仓库是 MacBook Pro 音乐播放器的**设计稿 / 视觉原型**（12 屏 HTML，1280×800 桌面画幅）：白底极简、以「声纹」为视觉主角，含全屏情景式动态歌词。不是可运行的播放器程序——页面是静态 HTML/CSS/少量演示用 JS，用于确认视觉、动效与交互走向。真实音源、歌词内核、本地存储等属于后续实现阶段，不在本仓库范围内。
+
+---
+
+## 界面预览
+
+启动页 · 首页 · 播放页 · 全屏歌词（点击看大图）：
+
+| 启动页 | 首页 |
+| :---: | :---: |
+| <a href="./screenshots/00-splash.png"><img src="./screenshots/00-splash.png" alt="启动页" width="49%"></a> | <a href="./screenshots/01-home.png"><img src="./screenshots/01-home.png" alt="首页" width="49%"></a> |
+
+播放页 · 全屏沉浸歌词（核心展示）：
+
+| 播放页 | 全屏歌词 |
+| :---: | :---: |
+| <a href="./screenshots/10-player.png"><img src="./screenshots/10-player.png" alt="播放页" width="49%"></a> | <a href="./screenshots/11-fullscreen-lyrics.png"><img src="./screenshots/11-fullscreen-lyrics.png" alt="全屏歌词" width="49%"></a> |
+
+其余界面：搜索 / 歌单 / 发现歌单 / 电台广场 / 排行榜 / 榜单详情 / 沉浸模式 / 设置，截图在 [`screenshots/`](./screenshots/) 目录。
 
 ---
 
