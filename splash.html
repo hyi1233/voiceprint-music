@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="dsh-design" content="desktop">
+<title>启动 · Voiceprint 声纹音乐</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{height:100%;overflow:hidden;background:var(--color-base)}
+  body{position:relative;height:100%;border-radius:var(--window-radius);overflow:hidden;
+    background:var(--color-bg);color:var(--color-text);font-family:var(--font-sans)}
+
+  .veil{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse 70% 55% at 50% 45%, oklch(100% 0 0), oklch(98% 0 0) 72%, oklch(96.5% 0 0))}
+
+  .field{position:absolute;inset:0;opacity:0;transition:opacity .4s var(--ease)}
+  .field.on{opacity:1}
+  .field canvas,.burst,.intro{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .burst{pointer-events:none;z-index:6}
+  .intro{pointer-events:none;z-index:7}
+
+  /* 大 logo：居中、在名字上方，果冻般弹两下后回到位置常驻 */
+  .intro-logo{position:absolute;left:50%;top:24%;z-index:8;width:200px;height:200px;
+    border-radius:48px;display:grid;place-items:center;background:var(--color-primary);
+    box-shadow:var(--shadow-md);pointer-events:none;opacity:0;
+    transform:translate(-50%,-50%) scale(.4)}
+  .intro-logo svg{width:108px;height:108px;stroke:var(--color-primary-ink);
+    stroke-width:1.5;fill:none;stroke-linecap:round}
+  .intro-logo.jelly{animation:logoJelly 1.7s .4s var(--ease) both}
+  @keyframes logoJelly{
+    0%  {opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(0deg)}
+    16% {opacity:1;transform:translate(-50%,-50%) scale(1.14,.86) rotate(-7deg)}
+    32% {transform:translate(-50%,-50%) scale(.88,1.13) rotate(6deg)}
+    48% {transform:translate(-50%,-50%) scale(1.08,.93) rotate(-4deg)}
+    64% {transform:translate(-50%,-50%) scale(.96,1.05) rotate(2.5deg)}
+    80% {transform:translate(-50%,-50%) scale(1.03,.98) rotate(-1deg)}
+    100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0deg)}
+  }
+  .intro-logo.back{animation:logoBack .55s var(--ease) both}
+  @keyframes logoBack{
+    0%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    45%{opacity:1;transform:translate(-50%,-50%) scale(1.07,.94)}
+    100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  }
+
+  .stage{position:relative;height:100vh;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;pointer-events:none}
+
+  .wordmark{display:flex;flex-direction:column;align-items:center;transform:translateY(20px)}
+  .brand{font-size:clamp(46px,6.4vw,84px);font-weight:200;line-height:1;
+    letter-spacing:.16em;text-indent:.16em;color:oklch(18% 0 0);white-space:nowrap}
+  .brand .ltr{display:inline-block;opacity:0;will-change:transform,opacity}
+  .cn-name{margin-top:34px;font-size:var(--text-sm);font-weight:400;
+    letter-spacing:.42em;text-indent:.42em;color:oklch(46% 0 0);
+    opacity:0;transform:translateY(10px);
+    transition:opacity .6s var(--ease),transform .6s var(--ease)}
+  .sub{margin-top:24px;font-size:var(--text-xs);letter-spacing:.24em;text-indent:.24em;
+    color:oklch(62% 0 0);opacity:0;transform:translateY(10px);
+    transition:opacity .6s .14s var(--ease),transform .6s .14s var(--ease)}
+  .wordmark.revealed .cn-name,.wordmark.revealed .sub{opacity:1;transform:none}
+
+  /* 掉落的黑色长方体：竖直落下、弹两下、压扁成横向胶囊（无字，最后才显示 Enter 字） */
+  .drop-bar{position:absolute;z-index:7;left:50%;top:-140px;width:46px;height:118px;
+    border-radius:16px;background:var(--color-primary);box-shadow:var(--shadow-md);
+    pointer-events:none;transform:translateX(-50%);
+    transition:width .7s var(--ease),height .7s var(--ease),border-radius .7s var(--ease)}
+  .drop-bar.flat{width:214px;height:56px;border-radius:999px}
+
+  .foot{position:absolute;bottom:118px;left:0;right:0;display:flex;flex-direction:column;
+    align-items:center;pointer-events:auto;opacity:0;transition:opacity .45s var(--ease)}
+  .foot.on{opacity:1}
+
+  .enter{position:relative;display:inline-flex;align-items:center;gap:14px;
+    font-family:var(--font-sans);font-size:var(--text-sm);font-weight:400;
+    color:var(--color-primary-ink);background:var(--color-primary);
+    border:0;border-radius:999px;padding:15px 46px;cursor:pointer;
+    box-shadow:var(--shadow-sm);transform-origin:center;
+    transition:transform .24s var(--ease),box-shadow .24s var(--ease),background .24s}
+  .enter .word{letter-spacing:.2em;text-indent:.2em}
+  .enter .arrow{font-size:.95em;letter-spacing:0;opacity:.9;transform:translateY(-.5px)}
+  .enter:hover{background:oklch(8% 0 0);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .enter:focus-visible{outline:2px solid oklch(30% 0 0);outline-offset:3px}
+  .enter.sinking{background:oklch(11% 0 0);transform:scale(.9);
+    box-shadow:inset 4px 4px 9px oklch(0% 0 0 / .55), inset -3px -3px 7px oklch(60% 0 0 / .14)}
+  .enter.rebound{animation:rebound .5s var(--ease)}
+  .enter.dissolve{opacity:0;transform:scale(.66);pointer-events:none}
+  @keyframes rebound{0%{transform:scale(.9)}46%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <div class="veil"></div>
+
+  <canvas class="intro" id="intro"></canvas>
+  <div class="intro-logo" id="introLogo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4M21 12h0"/></svg></div>
+
+  <div class="field" id="field"><canvas id="wave"></canvas></div>
+
+  <main class="stage">
+    <div class="wordmark" id="wordmark">
+      <h1 class="brand" id="brand"><span class="ltr">V</span><span class="ltr">o</span><span class="ltr">i</span><span class="ltr">c</span><span class="ltr">e</span><span class="ltr">p</span><span class="ltr">r</span><span class="ltr">i</span><span class="ltr">n</span><span class="ltr">t</span></h1>
+      <div class="cn-name">声纹音乐</div>
+      <div class="sub">让声音进入你的生活</div>
+    </div>
+    <div class="foot" id="foot">
+      <button class="enter" id="enterBtn" type="button"><span class="word">Enter</span><span class="arrow">➤</span></button>
+    </div>
+  </main>
+
+  <canvas class="burst" id="burst"></canvas>
+
+<script>
+(function(){
+  // —— 声纹：冷灰主体 + 少量低饱和彩色点缀 ——
+  var wave=document.getElementById('wave'),wx=wave.getContext('2d');
+  var W,H,dpr,pts=[],N=120,BPM=84,beatMs=60000/BPM;
+  var waveY=0;  // 声纹基线：按副标底与按钮顶动态居中，避免压字
+  function calcWaveY(){
+    var sub=document.querySelector('.sub').getBoundingClientRect();
+    var foot=document.getElementById('foot').getBoundingClientRect();
+    waveY=sub.bottom+(foot.top-sub.bottom)*.5;
+  }
+  function pickColor(){
+    var r=Math.random();
+    if(r<0.10) return {h:6,  s:64, l:54};
+    if(r<0.18) return {h:212,s:58, l:56};
+    if(r<0.24) return {h:32, s:60, l:55};
+    return {h:230,s:0,  l:44};
+  }
+  function resize(){dpr=Math.min(devicePixelRatio||1,2);W=wave.clientWidth;H=wave.clientHeight;
+    wave.width=W*dpr;wave.height=H*dpr;wx.setTransform(dpr,0,0,dpr,0,0);calcWaveY();init();}
+  function init(){pts=[];for(var i=0;i<N;i++)pts.push({ph:Math.random()*6.28,sp:.4+Math.random()*.8,
+    y:Math.random()*2-1,c:pickColor()});}
+
+  function frame(t){
+    wx.clearRect(0,0,W,H);
+    var cy=waveY||H*.66,span=W*.62,x0=(W-span)/2;
+    for(var i=0;i<N;i++){
+      var p=pts[i],px=x0+span*i/(N-1);
+      var env=Math.sin(Math.PI*i/(N-1));
+      var breathe=.8+.2*Math.sin(t*.0005+p.ph*.3);
+      var beatPhase=(((t-(i%6)*26)%beatMs)+beatMs)%beatMs/beatMs;
+      var kick=Math.pow(1-beatPhase,2.2);
+      var a=Math.sin(i*.30+p.ph+t*.0009*p.sp)*Math.sin(i*.09-t*.0006+p.ph);
+      var envelope=Math.sin(i*.17-t*.0012)*Math.sin(i*.045+t*.0004);
+      var amp=env*breathe*(14+42*Math.abs(a)*(.4+1.2*kick));
+      var yy=cy+envelope*amp*1.3+p.y*amp*.12;
+      var hh=2+Math.abs(a)*13*env*(.5+1.1*kick);
+      var al=Math.min(.62,.1+.22*env*breathe*(.5+.6*kick)+.07*Math.abs(a)+(p.c.s ? .2 : 0));
+      wx.strokeStyle='hsla('+p.c.h+','+p.c.s+'%,'+p.c.l+'%,'+al+')';wx.lineWidth=1;wx.lineCap='round';
+      wx.beginPath();wx.moveTo(px,yy-hh);wx.lineTo(px,yy+hh);wx.stroke();
+      wx.fillStyle='hsla('+p.c.h+','+p.c.s+'%,'+(p.c.l-4)+'%,'+(al*.85)+')';
+      wx.beginPath();wx.arc(px,yy,1+Math.abs(a)*1.4,0,6.28);wx.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  addEventListener('resize',resize);resize();requestAnimationFrame(frame);
+
+  // —— 入场动画：大 logo 果冻弹两下 → 黑块/彩点/字母依次掉落弹跳就位 → 定格 ——
+  var reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var logo=document.getElementById('introLogo'),brand=document.getElementById('brand');
+  var wordmark=document.getElementById('wordmark'),foot=document.getElementById('foot');
+  var letters=[].slice.call(document.querySelectorAll('#brand .ltr'));
+  var intro=document.getElementById('intro'),ix=intro.getContext('2d'),iw,ih,idpr;
+  function fitIntro(){idpr=Math.min(devicePixelRatio||1,2);iw=intro.clientWidth;ih=intro.clientHeight;
+    intro.width=iw*idpr;intro.height=ih*idpr;ix.setTransform(idpr,0,0,idpr,0,0);}
+  addEventListener('resize',fitIntro);fitIntro();
+
+  function revealAll(){
+    logo.style.opacity=1;logo.style.transform='translate(-50%,-50%) scale(1)';
+    letters.forEach(function(l){l.style.opacity=1;l.style.transform='none';});
+    wordmark.classList.add('revealed');
+    document.getElementById('field').classList.add('on');
+    foot.classList.add('on');
+    ix.clearRect(0,0,iw,ih);
+  }
+
+  // 0) 安静的灰色细线：音谱出现前的初始状态——一条横贯的灰线
+  function drawIdleLine(){
+    var cy=waveY||ih*.66,x0=iw*.19,span=iw*.62;
+    ix.clearRect(0,0,iw,ih);
+    var g=ix.createLinearGradient(x0,0,x0+span,0);
+    g.addColorStop(0,'hsla(230,0%,46%,0)');
+    g.addColorStop(.5,'hsla(230,0%,46%,.55)');
+    g.addColorStop(1,'hsla(230,0%,46%,0)');
+    ix.strokeStyle=g;ix.lineWidth=1.4;
+    ix.beginPath();ix.moveTo(x0,cy);ix.lineTo(x0+span,cy);ix.stroke();
+  }
+
+  // 1) 回车键（黑块）从 logo 里面掉落出来，砸在灰线上、撞破它，碎片飞溅
+  //    撞破后才进行弹跳、压扁成按钮；done 回调在彻底静止后触发
+  function dropBar(done){
+    var bar=document.createElement('div');bar.className='drop-bar';document.body.appendChild(bar);
+    var lr=logo.getBoundingClientRect();
+    var logoCX=lr.left+lr.width/2,logoCY=lr.top+lr.height/2;
+    var fr=foot.getBoundingClientRect();
+    var barH=118, finalTop=fr.top+fr.height/2-28;      // 胶囊最终 top
+    var lineY=waveY||ih*.66;                            // 灰线所在高度
+    var land=finalTop+(barH-56)/2;                      // 竖直条落地 top（中心对齐）
+    // 起点：logo 中心（从 logo 里掉出）；x 对齐 logo 中心，落到按钮位置时用 CSS transform 归位
+    var startX=logoCX, startY=logoCY-40;
+    var y=startY,v=0,g=1.25,bounces=0,guard=0,settled=false,broken=false;
+    bar.style.left=startX+'px';
+    var shards=[],shardRun=false;                       // 撞破灰线溅出的离子碎片（飞溅后直接重聚成音谱）
+    function spark(cx,cy){
+      var n=124,x0=iw*.19,span=iw*.62,baseY=waveY||ih*.66;
+      for(var i=0;i<n;i++){
+        var side=Math.random()<.5?-1:1;                   // 沿灰线向左右两侧溅开
+        var spd=2.2+Math.random()*5.6;
+        shards.push({x:cx+side*(4+Math.random()*18),y:cy+(Math.random()-.5)*6,
+          vx:side*spd,vy:(Math.random()-.5)*3.2-.6,       // 横向为主、略上扬
+          bx:cx+side*(4+Math.random()*18),by:cy+(Math.random()-.5)*6, // 飞溅起点
+          tx:x0+span*(i/(n-1)),ty:baseY+(Math.random()*2-1)*13,       // 重聚目标：铺成声波
+          c:pickColor()});
+      }
+      // 撞破瞬间声纹就开始淡入：碎片飞溅与音谱出现是同一件事，不再有停顿
+      document.getElementById('field').classList.add('on');
+      if(!shardRun){shardRun=true;shardT0=0;requestAnimationFrame(animateShards);}
+    }
+    var BURST_MS=380,GATHER_MS=620,shardT0=0;
+    function animateShards(now){
+      if(!shardT0)shardT0=now||performance.now();
+      var el=(now||performance.now())-shardT0;
+      var t=Math.min(1,el/(BURST_MS+GATHER_MS));
+      ix.clearRect(0,0,iw,ih);
+      var bursting=el<BURST_MS;
+      for(var i=0;i<shards.length;i++){
+        var s=shards[i],x,y,alpha;
+        if(bursting){                                     // 阶段A：撞破瞬间四散飞溅
+          var tb=el/1000;
+          x=s.bx+s.vx*tb*60;y=s.by+s.vy*tb*60+.5*1.1*Math.pow(tb*60,2)*.06;
+          alpha=.9;
+        }else{                                            // 阶段B：碎片直接汇入正在跳动的音谱、边聚边淡出
+          var k=(el-BURST_MS)/GATHER_MS,ease=1-Math.pow(1-k,2);
+          var ex=s.bx+s.vx*(BURST_MS/1000)*60;
+          x=ex+(s.tx-ex)*ease;y=s.ty+(Math.sin(i*.3+el*.004)*3)*(1-ease);
+          alpha=.9*(1-k);                                 // 融进音谱时渐隐，不闪断
+        }
+        ix.fillStyle='hsla('+s.c.h+','+s.c.s+'%,'+s.c.l+'%,'+alpha+')';
+        ix.beginPath();ix.arc(x,y,1.9,0,6.28);ix.fill();
+      }
+      if(t<1){requestAnimationFrame(animateShards);}
+      else{ix.clearRect(0,0,iw,ih);                       // 碎片已完全融进音谱
+        setTimeout(dropLetters,400);                      // 音谱成形后 → 字母掉落
+      }
+    }
+    function step(){
+      if(settled)return;
+      guard++;v+=g;y+=v;
+      // 黑块中心砸到灰线：撞破它
+      if(!broken&&y+barH/2>=lineY){
+        broken=true;spark(startX,lineY);                 // 灰线被撞破，溅出离子
+      }
+      if(y>=land){
+        y=land;v=-v*.34;bounces++;
+        if((bounces>=3&&Math.abs(v)<1.4)||guard>240){settle();return;}
+      }
+      bar.style.top=y+'px';
+      if(!broken){ix.clearRect(0,0,iw,ih);drawIdleLine();} // 撞破前：安静的灰线
+      // 撞破后碎片由 animateShards 独立绘制，这里不再碰画布
+      requestAnimationFrame(step);
+    }
+    function settle(){
+      settled=true;
+      bar.style.left='50%';bar.style.top=finalTop+'px';bar.classList.add('flat');
+      setTimeout(function(){
+        bar.remove();foot.classList.add('on');
+        if(done)done();                                 // 黑块就位 → afterWave=字母掉落（由音谱跳动完后触发）
+      },620);
+    }
+    step();
+  }
+
+  // 2) 英文字母依次从 logo 掉落：全部先落到"名字中心"，再从中心往两侧弹开、互相挤着排成 Voiceprint
+  //    靠中心的字母(e/p)滑行距离短，看着像"卡在中间挤不过去"；外侧字母滑得远、弹到位
+  function dropLetters(){
+    var lr=logo.getBoundingClientRect();
+    var logoCX=lr.left+lr.width/2,logoCY=lr.top+lr.height/2;
+    var br=brand.getBoundingClientRect();
+    var midX=br.left+br.width/2,midY=br.top+br.height/2;
+    var fallers=letters.map(function(el,i){
+      var r=el.getBoundingClientRect(),finalCX=r.left+r.width/2;
+      // 起点=logo 中心；相对自身最终位的位移：x 让字母堆在 midX，y 让它在 logo 高度
+      var x0=midX-finalCX+(Math.random()-.5)*5;
+      var y0=(logoCY-midY)-6-Math.random()*14;
+      return {el:el,
+        x:x0,y:y0,
+        vx:(Math.random()-.5)*.8, vy:1.8+Math.random()*1.4,  // 先往下掉
+        rot:(Math.random()-.5)*18,
+        kx:.052+Math.random()*.018,          // 水平弹簧：从中点滑向自己槽位
+        ky:.028+Math.random()*.012,          // 垂直弹簧：落回字行并回弹一下
+        damp:.80+Math.random()*.06,          // 阻尼偏低→滑过头再弹回，"弹开挤到位"
+        delay:i*300};
+    });
+    var start=performance.now();
+    function step(now){
+      var allDone=true;
+      for(var i=0;i<fallers.length;i++){
+        var f=fallers[i];
+        if(now-start<f.delay){                 // 还没轮到：藏在 logo 里
+          f.el.style.opacity=0;
+          f.el.style.transform='translate('+f.x.toFixed(1)+'px,'+f.y.toFixed(1)+'px) rotate('+f.rot.toFixed(1)+'deg)';
+          allDone=false;continue;
+        }
+        f.el.style.opacity=1;
+        var ax=-f.x*f.kx,ay=-f.y*f.ky;         // 弹簧拉向最终位(0,0)
+        f.vx=(f.vx+ax)*f.damp;f.vy=(f.vy+ay)*f.damp;f.rot*=.85;
+        f.x+=f.vx;f.y+=f.vy;
+        if(Math.abs(f.x)<.35&&Math.abs(f.y)<.35&&Math.abs(f.vx)<.25&&Math.abs(f.vy)<.25){
+          f.x=f.y=f.rot=0;
+        }else allDone=false;
+        f.el.style.transform='translate('+f.x.toFixed(2)+'px,'+f.y.toFixed(2)+'px) rotate('+f.rot.toFixed(2)+'deg)';
+      }
+      if(!allDone)requestAnimationFrame(step);else finish();
+    }
+    requestAnimationFrame(step);
+  }
+
+  // 4) 定格：logo 回归轻弹、名字固定、回车键出现、声纹开始跳动
+  function finish(){
+    letters.forEach(function(l){l.style.transform='none';l.style.opacity=1;});
+    wordmark.classList.add('revealed');
+    logo.classList.remove('jelly');
+    void logo.offsetWidth;
+    logo.classList.add('back');
+    document.getElementById('field').classList.add('on');
+    foot.classList.add('on');
+  }
+
+  if(reduceMotion){revealAll();}
+  else{
+    // logo 精确定位到名字上方一点（读初始排版位置，此时字母尚无 transform）
+    var br=brand.getBoundingClientRect(),logoSize=200;
+    logo.style.top=(br.top-34-logoSize/2)+'px';
+    logo.classList.add('jelly');                 // 背景先出 → logo 果冻弹跳(1.7s+.4s≈2.1s)
+    // logo 弹跳时，音谱位置先是一条安静的灰色细线
+    var lineTimer=setInterval(function(){if(!document.querySelector('.drop-bar'))drawIdleLine();},33);
+    setTimeout(function(){
+      clearInterval(lineTimer);
+      // 顺序：①logo(已果冻) → ②黑块掉落 → ③砸破飞溅成离子 → ④音谱跳动 → ⑤字母掉落 → ⑥中文字
+      dropBar();                                 // 黑块从 logo 里掉出、砸破灰线→碎片飞溅重聚成音谱→音谱跳动→字母掉落（都在 animateShards 里串起来）
+    },2300);
+  }
+
+  // —— Enter 拟态交互：下陷 → 弹起 → 离子扩散 → 进入首页 ——
+  var btn=document.getElementById('enterBtn');
+  var burst=document.getElementById('burst'),bx=burst.getContext('2d');
+  var bw,bh,bdpr,parts=[],bursting=false,navigated=false;
+  function fitBurst(){bdpr=Math.min(devicePixelRatio||1,2);bw=burst.clientWidth;bh=burst.clientHeight;
+    burst.width=bw*bdpr;burst.height=bh*bdpr;bx.setTransform(bdpr,0,0,bdpr,0,0);}
+  addEventListener('resize',fitBurst);fitBurst();
+
+  function spawn(cx,cy){
+    parts=[];
+    for(var i=0;i<96;i++){
+      var ang=Math.random()*Math.PI*2,spd=1.4+Math.random()*5.2;
+      parts.push({x:cx+(Math.random()-.5)*18,y:cy+(Math.random()-.5)*8,
+        vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,
+        life:0,max:46+Math.random()*34,r:1+Math.random()*2.2,c:pickColor()});
+    }
+    bursting=true;requestAnimationFrame(burstFrame);
+  }
+  function burstFrame(){
+    if(!bursting)return;
+    bx.clearRect(0,0,bw,bh);var alive=0;
+    for(var i=0;i<parts.length;i++){
+      var p=parts[i];p.life++;
+      if(p.life>=p.max)continue;
+      alive++;p.x+=p.vx;p.y+=p.vy;p.vx*=.974;p.vy*=.974;
+      var fade=1-p.life/p.max;
+      var al=Math.min(.75,fade*.7+(p.c.s ? .12 : 0));
+      bx.fillStyle='hsla('+p.c.h+','+p.c.s+'%,'+(p.c.s?p.c.l:p.c.l-6)+'%,'+al+')';
+      bx.beginPath();bx.arc(p.x,p.y,p.r*fade+.5,0,6.28);bx.fill();
+    }
+    if(alive>0)requestAnimationFrame(burstFrame);
+    else{bursting=false;bx.clearRect(0,0,bw,bh);goHome();}
+  }
+
+  btn.addEventListener('pointerdown',function(){btn.classList.remove('rebound');btn.classList.add('sinking');});
+  btn.addEventListener('pointerup',function(){btn.classList.remove('sinking');});
+  function goHome(){if(navigated)return;navigated=true;location.href='home.html';}
+  btn.addEventListener('click',function(){
+    if(navigated)return;
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){goHome();return;}
+    btn.classList.add('rebound');
+    var rect=btn.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    setTimeout(function(){btn.classList.remove('rebound');btn.classList.add('dissolve');spawn(cx,cy);},130);
+    // 兜底：即便粒子动画的 rAF 被节流/暂停，也保证进入首页
+    setTimeout(goHome,1700);
+  });
+})();
+</script>
+</body>
+</html>

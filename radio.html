@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="dsh-design" content="desktop">
+<title>电台广场 · Voiceprint 声纹音乐</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{height:100%;overflow:hidden;background:var(--color-base)}
+  body{position:relative;height:100%;border-radius:var(--window-radius);overflow:hidden;
+    background:var(--color-bg);color:var(--color-text);font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased}
+
+  /* —— 布局（与首页/搜索/歌单/发现同款）—— */
+  .layout{position:absolute;inset:0;display:flex;z-index:2}
+  .sidebar{width:206px;flex:none;display:flex;flex-direction:column;
+    padding:48px 16px 18px;background:oklch(99% 0 0)}
+  .side-foot{margin-top:auto;padding:0 8px}
+  .side-foot .gh-link{margin-left:auto}
+  .brand{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:0 8px;margin-bottom:40px}
+  .brand b{font-size:16px;font-weight:600;letter-spacing:.14em;color:oklch(16% 0 0);white-space:nowrap}
+  .brand span{font-size:11px;font-weight:400;letter-spacing:.24em;color:oklch(52% 0 0);white-space:nowrap}
+  .nav-label{padding:0 10px;margin:0 0 12px;font-size:11px;font-weight:500;letter-spacing:.24em;color:oklch(53% 0 0)}
+  .nav{display:flex;flex-direction:column;gap:4px}
+  .nav a{display:flex;align-items:center;gap:13px;height:42px;padding:0 12px;border-radius:10px;
+    color:oklch(42% 0 0);font-size:16px;text-decoration:none;cursor:pointer;transition:background .2s,color .2s}
+  .nav a svg{width:19px;height:19px;flex:none;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+  .nav a:hover{background:oklch(20% 0 0 / .05);color:oklch(16% 0 0)}
+  .nav a.active{color:oklch(16% 0 0);font-weight:600;background:oklch(20% 0 0 / .07)}
+  .nav a.active svg{opacity:1;stroke-width:1.9}
+  .divider{height:1px;background:var(--color-line);margin:22px 10px}
+
+  .main{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;background:var(--color-bg)}
+  .topbar{position:relative;z-index:2;height:64px;flex:none;display:flex;align-items:center;gap:22px;padding:0 30px}
+  .chips{display:flex;gap:6px;align-items:center}
+  .chip{height:30px;padding:0 15px;border-radius:999px;border:0;background:transparent;color:oklch(50% 0 0);
+    font-size:var(--text-xs);letter-spacing:.1em;cursor:pointer;transition:.2s;white-space:nowrap}
+  .chip:hover{background:oklch(20% 0 0 / .05);color:oklch(16% 0 0)}
+  .chip.on{color:oklch(100% 0 0);background:oklch(16% 0 0)}
+
+  .content{position:relative;z-index:1;flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;
+    padding:22px 40px 116px}
+  .content::-webkit-scrollbar{display:none}
+  .wrap{width:100%;max-width:1040px;margin:0 auto}
+
+  .page-head{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+  .back{width:36px;height:36px;flex:none;border-radius:50%;border:1px solid var(--color-line);
+    background:transparent;color:oklch(16% 0 0);display:grid;place-items:center;cursor:pointer;transition:.2s}
+  .back:hover{background:oklch(16% 0 0);border-color:oklch(16% 0 0);color:oklch(100% 0 0)}
+  .back svg{width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .page-head .kicker{display:block;font-size:var(--text-xs);font-weight:600;letter-spacing:.28em;color:oklch(50% 0 0);margin-bottom:4px}
+  .page-head h1{font-size:var(--text-2xl);font-weight:600;letter-spacing:.04em;color:oklch(16% 0 0)}
+  .page-head .hint{margin-top:2px;font-size:var(--text-xs);letter-spacing:.08em;color:oklch(54% 0 0)}
+
+  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 0 18px;
+    border-top:1px solid var(--color-line);border-bottom:1px solid var(--color-line);margin-bottom:20px}
+  .tgroup{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tgroup .tl{font-size:var(--text-xs);letter-spacing:.12em;color:oklch(52% 0 0);margin-right:4px}
+  .tbtn{height:28px;padding:0 13px;border-radius:999px;border:1px solid transparent;background:transparent;
+    color:oklch(48% 0 0);font-family:var(--font-sans);font-size:var(--text-xs);letter-spacing:.06em;
+    cursor:pointer;transition:.2s;white-space:nowrap}
+  .tbtn:hover{color:oklch(16% 0 0);background:oklch(20% 0 0 / .05)}
+  .tbtn.on{color:oklch(100% 0 0);background:oklch(16% 0 0)}
+
+  /* 满屏电台网格（4 列） */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .rcard{border-radius:var(--radius-md);border:1px solid var(--color-line);overflow:hidden;
+    background:oklch(100% 0 0);cursor:pointer;min-width:0;
+    transition:transform .3s var(--ease),box-shadow .3s var(--ease),border-color .3s}
+  .rcard:hover{transform:translateY(-5px);box-shadow:var(--shadow-md);border-color:oklch(20% 0 0 / .2)}
+  .rcard .art{position:relative;height:112px;display:flex;align-items:center;justify-content:center;
+    background:oklch(20% 0 0);overflow:hidden}
+  .rcard .art .wave{position:absolute;inset:0;opacity:.9}
+  .rcard .art .wave svg{width:100%;height:100%;stroke:oklch(100% 0 0 / .55);stroke-width:1.6;fill:none}
+  .rcard .art .icon{position:relative;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+    background:oklch(100% 0 0 / .15);border:1px solid oklch(100% 0 0 / .4)}
+  .rcard .art .icon svg{width:20px;height:20px;stroke:oklch(100% 0 0);stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .rcard .art .live{position:absolute;left:10px;top:10px;display:flex;align-items:center;gap:5px;
+    color:oklch(100% 0 0);font-size:11px;letter-spacing:.06em}
+  .rcard .art .live i{width:6px;height:6px;border-radius:50%;background:oklch(75% .15 25);box-shadow:0 0 0 3px oklch(75% .15 25 / .25)}
+  .rcard .body{padding:12px 12px 14px}
+  .rcard .body .tag{font-size:11px;letter-spacing:.04em;color:oklch(50% 0 0)}
+  .rcard .body h4{margin-top:4px;font-size:var(--text-sm);font-weight:600;color:oklch(16% 0 0);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rcard .body p{margin-top:5px;font-size:var(--text-xs);color:oklch(54% 0 0);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rcard .body .stat{margin-top:9px;font-size:var(--text-xs);color:oklch(52% 0 0);display:flex;align-items:center;gap:5px}
+  .rcard .body .stat svg{width:12px;height:12px;stroke:currentColor;stroke-width:1.7;fill:none}
+
+  .count-line{font-size:var(--text-xs);letter-spacing:.08em;color:oklch(54% 0 0);margin:18px 0 4px}
+  .empty{padding:60px 0;text-align:center;font-size:var(--text-sm);color:oklch(54% 0 0)}
+
+  .bottom-wave{position:absolute;left:0;right:0;bottom:0;width:100%;height:88px;z-index:3;pointer-events:none;display:block}
+  .toast{position:absolute;left:50%;bottom:118px;transform:translateX(-50%) translateY(8px);z-index:9;
+    padding:10px 20px;border-radius:999px;background:oklch(16% 0 0);color:oklch(100% 0 0);
+    font-size:var(--text-xs);letter-spacing:.08em;opacity:0;transition:.28s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-discover" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5v14M8 5v14M12 6l7-1.6v13.2L12 16"/><circle cx="5.5" cy="9" r="1"/><circle cx="5.5" cy="15" r="1"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6.5 8-6.5s8 2.5 8 6.5"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1-2.1 2.1-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21h-3v-.1a1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3l-.1.1L6.8 17l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H5v-3h.1a1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8L6.8 7.1 8.9 5l.1.1a1.6 1.6 0 001.8.3 1.6 1.6 0 001-1.5V4h3v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1 2.1 2.1-.1.1a1.6 1.6 0 00-.3 1.8 1.6 1.6 0 001.5 1H21v3h-.1a1.6 1.6 0 00-1.5 1z"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M7.8 7.8a6 6 0 000 8.4M16.2 7.8a6 6 0 010 8.4M4.9 4.9a10 10 0 000 14.2M19.1 4.9a10 10 0 010 14.2"/></symbol>
+    <symbol id="i-head" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0116 0v2"/><rect x="2.5" y="13" width="4" height="7" rx="2"/><rect x="17.5" y="13" width="4" height="7" rx="2"/></symbol>
+  </svg>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand"><b>Voiceprint</b><span>声纹音乐</span></div>
+      <p class="nav-label">浏览</p>
+      <nav class="nav">
+        <a><svg><use href="#i-discover"/></svg>首页</a>
+        <a><svg><use href="#i-search"/></svg>搜索</a>
+        <a class="active"><svg><use href="#i-library"/></svg>歌单</a>
+        <a><svg><use href="#i-chart"/></svg>排行榜</a>
+      </nav>
+      <div class="divider"></div>
+      <p class="nav-label">我的</p>
+      <nav class="nav">
+        
+        <a><svg><use href="#i-moon"/></svg>沉浸模式</a>
+        <a><svg><use href="#i-settings"/></svg>设置</a>
+      </nav>
+      <div class="side-foot top-brand" title="Voiceprint 声纹音乐">
+        <span class="top-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4M21 12h0"/></svg></span>
+        <span class="top-brand-name">Voiceprint<span class="v">v1.0.0</span></span>
+        <a class="gh-link" href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub 仓库" aria-label="打开 GitHub 仓库">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 012-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <section class="main">
+      <header class="topbar">
+        <div class="chips" id="chips">
+          <button class="chip" data-view="首页">首页</button>
+          <button class="chip" data-view="搜索">搜索</button>
+          <button class="chip on" data-view="歌单">歌单</button>
+          <button class="chip" data-view="排行榜">排行榜</button>
+          
+          <button class="chip" data-view="沉浸模式">沉浸模式</button>
+          <button class="chip" data-view="设置">设置</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="wrap">
+          <div class="page-head">
+            <button class="back" id="back" title="返回歌单" aria-label="返回歌单"><svg><use href="#i-back"/></svg></button>
+            <div>
+              <span class="kicker">RADIO STATION</span>
+              <h1>电台广场</h1>
+              <div class="hint">发现正在播放的电台与播客 · 找到属于此刻的频率</div>
+            </div>
+          </div>
+
+          <div class="toolbar" id="catGroup">
+            <span class="tl">分类</span>
+            <button class="tbtn on" data-cat="全部">全部</button>
+            <button class="tbtn" data-cat="推荐">为你推荐</button>
+            <button class="tbtn" data-cat="助眠">助眠放松</button>
+            <button class="tbtn" data-cat="通勤">通勤路上</button>
+            <button class="tbtn" data-cat="白噪音">白噪音</button>
+            <button class="tbtn" data-cat="音乐">音乐电台</button>
+            <button class="tbtn" data-cat="播客">播客</button>
+          </div>
+
+          <div class="count-line" id="countLine"></div>
+          <div class="grid" id="grid"></div>
+          <div class="empty" id="empty" style="display:none">这个分类还没有电台，换个分类试试</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <canvas class="bottom-wave" id="bottomWave"></canvas>
+  <div class="toast" id="toast">制作中</div>
+
+<script>
+(function(){
+  var radios=[
+    {t:'深夜不打烊',cat:'推荐',tag:'情感 · 陪伴',desc:'陪你把心事慢慢说完',live:true,listeners:'2.3万',hue:262},
+    {t:'晨间第一缕光',cat:'推荐',tag:'清新 · 唤醒',desc:'用一首歌开始新的一天',live:true,listeners:'1.8万',hue:32},
+    {t:'雨声入眠',cat:'助眠',tag:'自然 · 白噪音',desc:'窗外有雨，屋里安心睡去',live:false,listeners:'5.6万',hue:210},
+    {t:'阿尔法脑波',cat:'助眠',tag:'冥想 · 专注',desc:'适合深度工作与放松',live:false,listeners:'3.1万',hue:280},
+    {t:'晚安，好梦',cat:'助眠',tag:'轻音乐 · 睡前',desc:'温柔旋律伴你入梦',live:true,listeners:'9128',hue:320},
+    {t:'通勤节拍',cat:'通勤',tag:'流行 · 节奏',desc:'早高峰也能元气满满',live:true,listeners:'4.2万',hue:200},
+    {t:'地铁漫游',cat:'通勤',tag:'电子 · 律动',desc:'城市穿梭的声音背景',live:false,listeners:'1.5万',hue:175},
+    {t:'周五下班电台',cat:'通勤',tag:'快乐 · 放松',desc:'把一周的疲惫丢在路上',live:true,listeners:'2.7万',hue:45},
+    {t:'篝火白噪音',cat:'白噪音',tag:'自然 · 火焰',desc:'噼啪作响的温暖夜晚',live:false,listeners:'6.8万',hue:24},
+    {t:'咖啡馆角落',cat:'白噪音',tag:'环境 · 人声',desc:'像坐在街角的咖啡店',live:false,listeners:'3.9万',hue:30},
+    {t:'森林清晨',cat:'白噪音',tag:'自然 · 鸟鸣',desc:'被鸟叫叫醒的清爽',live:false,listeners:'2.2万',hue:140},
+    {t:'华语经典旋律',cat:'音乐',tag:'经典 · 怀旧',desc:'那些单曲循环的旧歌',live:true,listeners:'5.1万',hue:340},
+    {t:'独立音乐现场',cat:'音乐',tag:'独立 · Live',desc:'小众但动人的声音',live:true,listeners:'1.2万',hue:190},
+    {t:'爵士深夜档',cat:'音乐',tag:'爵士 · 慵懒',desc:'微醺时分的萨克斯',live:false,listeners:'8976',hue:260},
+    {t:'故事FM',cat:'播客',tag:'人文 · 纪实',desc:'每个人都有自己的故事',live:false,listeners:'7.3万',hue:16},
+    {t:'科技早知道',cat:'播客',tag:'科技 · 资讯',desc:'通勤路上听懂新趋势',live:false,listeners:'4.4万',hue:215}
+  ];
+  var cat='全部';
+  var grid=document.getElementById('grid'),countLine=document.getElementById('countLine'),empty=document.getElementById('empty');
+  function waveSvg(hue){return '<svg viewBox="0 0 220 60" preserveAspectRatio="none"><path d="M0 30 Q14 8 28 30 T56 30 T84 30 T112 30 T140 30 T168 30 T196 30 T220 30"/></svg>';}
+  function render(){
+    var list=cat==='全部'?radios:radios.filter(function(r){return r.cat===cat;});
+    countLine.textContent='共 '+list.length+' 个电台';
+    empty.style.display=list.length?'none':'block';
+    grid.innerHTML='';
+    list.forEach(function(r){
+      var card=document.createElement('div');card.className='rcard';
+      var artBg='linear-gradient(135deg, oklch(34% .07 '+r.hue+'), oklch(20% .04 '+r.hue+'))';
+      card.innerHTML='<div class="art" style="background:'+artBg+'">'+
+          '<div class="wave">'+waveSvg(r.hue)+'</div>'+
+          (r.live?'<span class="live"><i></i>LIVE</span>':'')+
+          '<span class="icon"><svg><use href="#i-radio"/></svg></span></div>'+
+        '<div class="body"><span class="tag">'+r.tag+'</span><h4>'+r.t+'</h4>'+
+          '<p>'+r.desc+'</p><div class="stat"><svg viewBox="0 0 24 24"><use href="#i-head"/></svg>'+r.listeners+' 人在听</div></div>';
+      card.addEventListener('click',function(){location.href='player.html';});
+      grid.appendChild(card);
+    });
+  }
+  render();
+  document.getElementById('catGroup').addEventListener('click',function(e){
+    var b=e.target.closest('.tbtn');if(!b)return;
+    [].slice.call(this.querySelectorAll('.tbtn')).forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');cat=b.dataset.cat;render();
+  });
+  document.getElementById('back').addEventListener('click',function(){location.href='playlist.html';});
+  function showToast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+    clearTimeout(showToast._t);showToast._t=setTimeout(function(){el.classList.remove('show');},1600);}
+
+  // 顶栏分类与左侧菜单双向联动
+  var chipEls=[].slice.call(document.querySelectorAll('.chip')),navEls=[].slice.call(document.querySelectorAll('.nav a'));
+  function setView(label){
+    chipEls.forEach(function(c){c.classList.toggle('on',c.dataset.view===label);});
+    navEls.forEach(function(n){n.classList.toggle('active',n.textContent.trim()===label);});
+    var url={'首页':'home.html','搜索':'search.html','歌单':'playlist.html','排行榜':'rank.html','沉浸模式':'immersive.html','设置':'settings.html'}[label];
+    if(url){location.href=url;}
+  }
+  function navToast(msg){
+    var t=document.getElementById('navToast');
+    if(!t){t=document.createElement('div');t.id='navToast';
+      t.style.cssText='position:fixed;left:50%;bottom:34px;transform:translate(-50%,0);z-index:99;padding:10px 20px;border-radius:999px;background:rgba(30,30,30,.92);color:#fff;font-size:13px;opacity:0;transition:opacity .25s';
+      document.body.appendChild(t);}
+    t.textContent=msg;t.style.opacity='1';
+    clearTimeout(t._timer);t._timer=setTimeout(function(){t.style.opacity='0';},1500);
+  }
+  chipEls.forEach(function(c){c.addEventListener('click',function(){setView(c.dataset.view);});});
+  navEls.forEach(function(n){n.addEventListener('click',function(){setView(n.textContent.trim());});});
+
+  // 底部声纹
+  var BPM=84,beatMs=60000/BPM;
+  function fit(cv){var dpr=Math.min(devicePixelRatio||1,2),w=cv.clientWidth,h=cv.clientHeight;
+    cv.width=w*dpr;cv.height=h*dpr;cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0);return {w:w,h:h};}
+  function pickColor(){var r=Math.random();
+    if(r<0.10)return{h:6,s:64,l:54};if(r<0.18)return{h:212,s:58,l:56};
+    if(r<0.24)return{h:32,s:60,l:55};return{h:230,s:0,l:44};}
+  var bw=document.getElementById('bottomWave'),bx=bw.getContext('2d'),W,BN=140,pts=[];
+  for(var j=0;j<BN;j++)pts.push({ph:Math.random()*6.28,sp:.4+Math.random()*.8,y:Math.random()*2-1,c:pickColor()});
+  function resize(){W=fit(bw);}
+  addEventListener('resize',resize);resize();
+  function drawWave(t){
+    bx.clearRect(0,0,W.w,W.h);
+    var sideW=206,avail=W.w-sideW,span=avail,x0=sideW,base=W.h*.62;
+    for(var i=0;i<BN;i++){
+      var p=pts[i],x=x0+span*i/(BN-1),env=Math.sin(Math.PI*i/(BN-1));
+      var breathe=.8+.2*Math.sin(t*.0005+p.ph*.3);
+      var beatPhase=(((t-(i%6)*26)%beatMs)+beatMs)%beatMs/beatMs,kick=Math.pow(1-beatPhase,2.2);
+      var a=Math.sin(i*.30+p.ph+t*.0009*p.sp)*Math.sin(i*.09-t*.0006+p.ph);
+      var envelope=Math.sin(i*.17-t*.0012)*Math.sin(i*.045+t*.0004);
+      var amp=env*breathe*(8+11*Math.abs(a)*(.4+1.2*kick));
+      var yy=base+envelope*amp+p.y*amp*.12,hh=2+Math.abs(a)*9*env*(.5+1.1*kick),col=p.c;
+      var al=Math.min(.68,.12+.26*env*breathe*(.5+.6*kick)+.08*Math.abs(a)+(col.s ? .22 : 0));
+      bx.strokeStyle='hsla('+col.h+','+col.s+'%,'+col.l+'%,'+al+')';bx.lineWidth=1;bx.lineCap='round';
+      bx.beginPath();bx.moveTo(x,yy-hh);bx.lineTo(x,yy+hh);bx.stroke();
+      bx.fillStyle='hsla('+col.h+','+col.s+'%,'+(col.l-4)+'%,'+(al*.9)+')';
+      bx.beginPath();bx.arc(x,yy,1+Math.abs(a)*1.4,0,6.28);bx.fill();
+    }
+  }
+  function frame(t){drawWave(t);requestAnimationFrame(frame);}
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

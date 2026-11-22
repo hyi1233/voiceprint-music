@@ -1,0 +1,91 @@
+/* 音乐播放器 · 设计变量
+   风格：白底极简（纯白+黑强调，冷灰声纹作背景）—— 全局统一
+   参考：用户最爱的那张极简播放界面——纯白底、黑白封面、实心黑胶囊按钮、大留白靠排版撑气质
+   原则：无毛玻璃、无渐变、无发光、无彩带；克制留白 + 精致排版 + 一点冷灰节奏 */
+:root {
+  /* 颜色：纯白基调 —— 全局统一，启动页/首页/播放页/所有界面共用 */
+  --color-bg: oklch(100% 0 0);                 /* 主背景：纯白 */
+  --color-bg-deep: oklch(97.5% 0 0);           /* 极浅灰：层次/悬浮面 */
+  --color-base: oklch(96.5% 0 0);              /* 窗口外层/圆角处，与浅灰托盘衔接 */
+  --color-surface: oklch(100% 0 0 / 0.86);     /* 半透明白表面 */
+  --color-surface-2: oklch(97% 0 0 / 0.9);
+  --color-surface-solid: oklch(100% 0 0);      /* 不透明表面 */
+  --color-text: oklch(20% 0 0);                /* 正文：近黑，白底上对比充足 */
+  --color-muted: oklch(48% 0 0);               /* 次要文字：中灰 */
+  --color-faint: oklch(64% 0 0);               /* 更弱的注释文字：浅灰 */
+  --color-line: oklch(20% 0 0 / 0.1);          /* 分隔线：极淡 */
+  --color-primary: oklch(18% 0 0);             /* 主色：实心黑（胶囊按钮） */
+  --color-primary-ink: oklch(100% 0 0);        /* 主色按钮上的文字：白 */
+  --color-accent: oklch(70% 0 0);              /* 点睛：冷灰（声纹/细节），不抢黑 */
+  --color-success: oklch(62% 0.12 155);
+
+  /* 玻璃：极简风不再用毛玻璃，仅保留变量兼容，默认几乎透明 */
+  --glass-blur: blur(12px) saturate(100%);
+  --glass-border: 1px solid oklch(20% 0 0 / 0.08);
+
+  /* 字体：日系极简偏好的干净无衬线 + 精致数字 */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans JP", system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* 字号阶梯 */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 19px;
+  --text-xl: 24px;
+  --text-2xl: 32px;
+  --text-3xl: 42px;
+
+  /* 间距 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+  --window-radius: 28px;                   /* 窗口四角圆弧，与 DSH 主面板圆角(--dsw-radius-panel:28px)一致 */
+
+  /* 阴影：极淡的灰，只用来托起层次，不用发光 */
+  --shadow-sm: 0 2px 10px oklch(20% 0 0 / 0.05);
+  --shadow-md: 0 12px 34px oklch(20% 0 0 / 0.09);
+  --shadow-lg: 0 24px 64px oklch(20% 0 0 / 0.13);
+
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --dur: 200ms;
+}
+
+/* ===== 右上角品牌位：启动页/首页/播放页/搜索页四页统一（声波logo + Voiceprint + 版本 + GitHub）=====
+   放在顶栏最右，四页位置、尺寸、间距完全一致；图标用 inline path，不依赖各页 sprite */
+.top-brand{display:flex;align-items:center;gap:9px;flex:none}
+.top-logo{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  background:oklch(16% 0 0);color:oklch(100% 0 0)}
+.top-logo svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none;
+  stroke-linecap:round;stroke-linejoin:round}
+.top-brand-name{font-size:11px;letter-spacing:.06em;color:oklch(28% 0 0);white-space:nowrap}
+.top-brand-name .v{color:oklch(52% 0 0);margin-left:5px;font-variant-numeric:tabular-nums}
+.top-brand .gh-link{display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;flex:none;color:oklch(50% 0 0);border-radius:5px;
+  transition:color .18s,background .18s}
+.top-brand .gh-link:hover{color:oklch(16% 0 0);background:oklch(20% 0 0 / .06)}
+.top-brand .gh-link:focus-visible{outline:2px solid oklch(16% 0 0);outline-offset:2px}
+.top-brand .gh-link svg{width:15px;height:15px;fill:currentColor;stroke:none}
+
+/* 左下品牌位（有侧栏页）：侧栏较窄，logo 绝不能被 flex 挤压变形，必须是 30×30 正方形 */
+.side-foot.top-brand{gap:6px}
+.side-foot .top-logo{flex:none}
+.side-foot .top-brand-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+aside.sidebar .side-foot{padding:0 2px}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur: 0ms; }
+}

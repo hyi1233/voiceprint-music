@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="dsh-design" content="desktop">
+<title>设置 · Voiceprint 声纹音乐</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{height:100%;overflow:hidden;background:var(--color-base)}
+  body{position:relative;height:100%;border-radius:var(--window-radius);overflow:hidden;
+    background:var(--color-bg);color:var(--color-text);font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased}
+
+  /* —— 布局（与全站一致）—— */
+  .layout{position:absolute;inset:0;display:flex;z-index:2}
+  .sidebar{width:206px;flex:none;display:flex;flex-direction:column;
+    padding:48px 16px 18px;background:oklch(99% 0 0)}
+  .side-foot{margin-top:auto;padding:0 2px}
+  .side-foot .gh-link{margin-left:auto}
+  .brand{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:0 8px;margin-bottom:40px}
+  .brand b{font-size:16px;font-weight:600;letter-spacing:.14em;color:oklch(16% 0 0);white-space:nowrap}
+  .brand span{font-size:11px;font-weight:400;letter-spacing:.24em;color:oklch(52% 0 0);white-space:nowrap}
+  .nav-label{padding:0 10px;margin:0 0 12px;font-size:11px;font-weight:500;letter-spacing:.24em;color:oklch(53% 0 0)}
+  .nav{display:flex;flex-direction:column;gap:4px}
+  .nav a{display:flex;align-items:center;gap:13px;height:42px;padding:0 12px;border-radius:10px;
+    color:oklch(42% 0 0);font-size:16px;text-decoration:none;cursor:pointer;transition:background .2s,color .2s}
+  .nav a svg{width:19px;height:19px;flex:none;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+  .nav a:hover{background:oklch(20% 0 0 / .05);color:oklch(16% 0 0)}
+  .nav a.active{color:oklch(16% 0 0);font-weight:600;background:oklch(20% 0 0 / .07)}
+  .nav a.active svg{opacity:1;stroke-width:1.9}
+  .divider{height:1px;background:var(--color-line);margin:22px 10px}
+
+  .main{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;background:var(--color-bg)}
+  .topbar{position:relative;z-index:2;height:64px;flex:none;display:flex;align-items:center;gap:22px;padding:0 30px}
+  .chips{display:flex;gap:6px;align-items:center}
+  .chip{height:30px;padding:0 15px;border-radius:999px;border:0;background:transparent;color:oklch(50% 0 0);
+    font-size:var(--text-xs);letter-spacing:.1em;cursor:pointer;transition:.2s;white-space:nowrap}
+  .chip:hover{background:oklch(20% 0 0 / .05);color:oklch(16% 0 0)}
+  .chip.on{color:oklch(100% 0 0);background:oklch(16% 0 0)}
+
+  .content{position:relative;z-index:1;flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;
+    padding:24px 40px 116px}
+  .content::-webkit-scrollbar{display:none}
+  .wrap{width:100%;max-width:1040px;margin:0 auto}
+
+  .page-head{margin-bottom:20px}
+  .kicker{font-size:var(--text-xs);font-weight:600;letter-spacing:.3em;color:oklch(52% 0 0)}
+  .page-head h1{font-size:var(--text-3xl);font-weight:750;letter-spacing:.04em;margin:6px 0 6px;color:oklch(16% 0 0)}
+  .page-head p{font-size:var(--text-sm);color:oklch(50% 0 0)}
+
+  /* —— 设置布局：左分组导航 / 右内容 —— */
+  .set-layout{display:grid;grid-template-columns:184px 1fr;gap:26px;align-items:start}
+  .group-nav{display:flex;flex-direction:column;gap:4px;position:sticky;top:0}
+  .gnav{height:44px;padding:0 14px;border:0;border-radius:10px;background:transparent;cursor:pointer;
+    display:flex;align-items:center;gap:11px;text-align:left;color:oklch(46% 0 0);font-family:var(--font-sans);
+    font-size:var(--text-sm);transition:.2s}
+  .gnav svg{width:18px;height:18px;flex:none;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .gnav:hover{background:oklch(20% 0 0 / .05);color:oklch(16% 0 0)}
+  .gnav.on{background:oklch(16% 0 0);color:oklch(100% 0 0);font-weight:600}
+
+  .panel{display:none;min-width:0}
+  .panel.on{display:block}
+  .card{border:1px solid var(--color-line);border-radius:var(--radius-lg);background:oklch(100% 0 0);
+    padding:20px 22px;margin-bottom:16px}
+  .sec-hd{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
+  .sec-hd .bar{width:3px;height:15px;border-radius:2px;background:oklch(18% 0 0);flex:none}
+  .sec-hd h2{font-size:var(--text-md);font-weight:650;color:oklch(18% 0 0)}
+  .sec-hd .en{font-size:11px;letter-spacing:.18em;color:oklch(50% 0 0)}
+  .sec-hd .tail{margin-left:auto;font-size:11px;color:oklch(50% 0 0)}
+
+  /* 档位/设备选项 */
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .grid.c2{grid-template-columns:repeat(2,1fr)}
+  .opt{min-height:52px;padding:9px 12px;border:1px solid var(--color-line);border-radius:12px;
+    background:oklch(100% 0 0);cursor:pointer;text-align:left;transition:.2s;
+    display:flex;flex-direction:column;justify-content:center;gap:3px;font-family:var(--font-sans)}
+  .opt:hover{border-color:oklch(18% 0 0 / .4)}
+  .opt.on{background:oklch(16% 0 0);border-color:oklch(16% 0 0);color:oklch(100% 0 0)}
+  .opt .nm{font-size:var(--text-sm);font-weight:600;white-space:nowrap}
+  .opt .ds{font-size:11px;color:oklch(50% 0 0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .opt.on .ds{color:oklch(100% 0 0 / .74)}
+  .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .row .opt{min-width:88px}
+
+  /* 开关行 */
+  .setrow{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--color-line)}
+  .setrow:first-of-type{border-top:0}
+  .setrow .sr-txt{flex:1;min-width:0}
+  .setrow .sr-txt b{display:block;font-size:var(--text-sm);font-weight:600;color:oklch(20% 0 0)}
+  .setrow .sr-txt small{display:block;font-size:11px;color:oklch(50% 0 0);margin-top:3px}
+  .toggle{display:inline-flex;align-items:center;cursor:pointer;flex:none}
+  .toggle input{appearance:none;width:44px;height:26px;border-radius:999px;background:oklch(20% 0 0 / .16);
+    position:relative;cursor:pointer;transition:.2s;flex:none}
+  .toggle input::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;
+    background:#fff;transition:.2s;box-shadow:0 1px 3px oklch(0 0 0 / .2)}
+  .toggle input:checked{background:oklch(18% 0 0)}
+  .toggle input:checked::after{left:23px}
+
+  .btn{height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--color-line);background:oklch(100% 0 0);
+    color:oklch(20% 0 0);font-family:var(--font-sans);font-size:var(--text-sm);cursor:pointer;transition:.2s;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px}
+  .btn:hover{border-color:oklch(18% 0 0 / .4);background:oklch(96% 0 0)}
+  .btn.primary{background:oklch(16% 0 0);border-color:oklch(16% 0 0);color:oklch(100% 0 0)}
+  .btn.primary:hover{background:oklch(24% 0 0)}
+  .btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+  /* 本地音源大卡 */
+  .local-card{border:1px solid oklch(18% 0 0 / .16);border-radius:var(--radius-lg);
+    background:oklch(98% 0 0);padding:18px 20px;margin-bottom:18px}
+  .local-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .local-ico{width:40px;height:40px;flex:none;border-radius:11px;background:oklch(16% 0 0);color:oklch(100% 0 0);
+    display:grid;place-items:center}
+  .local-ico svg{width:21px;height:21px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .local-meta{flex:1;min-width:0}
+  .local-meta b{font-size:var(--text-md);font-weight:650;color:oklch(18% 0 0)}
+  .badge-local{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;
+    background:oklch(16% 0 0);color:oklch(100% 0 0);font-size:11px;vertical-align:middle}
+  .local-meta small{display:block;font-size:11px;color:oklch(50% 0 0);margin-top:3px}
+  .dropzone{border:1px dashed oklch(20% 0 0 / .24);border-radius:12px;padding:16px;text-align:center;
+    font-size:var(--text-xs);color:oklch(50% 0 0);background:oklch(100% 0 0);margin-bottom:12px}
+
+  /* 音源列表行 */
+  .src-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--color-line)}
+  .src-row:first-of-type{border-top:0}
+  .src-dot{width:30px;height:30px;flex:none;border-radius:9px;display:grid;place-items:center;
+    font-size:var(--text-xs);font-weight:700;color:oklch(100% 0 0)}
+  .src-name{flex:1;min-width:0}
+  .src-name b{display:block;font-size:var(--text-sm);font-weight:600;color:oklch(20% 0 0)}
+  .src-name small{display:block;font-size:11px;color:oklch(50% 0 0);margin-top:2px}
+
+  /* 皮肤卡 */
+  .skin-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .skin{border:1px solid var(--color-line);border-radius:var(--radius-md);overflow:hidden;cursor:pointer;
+    background:oklch(100% 0 0);transition:.2s;position:relative}
+  .skin:hover{border-color:oklch(18% 0 0 / .4)}
+  .skin.on{border-color:oklch(16% 0 0);box-shadow:0 0 0 2px oklch(16% 0 0 / .12)}
+  .skin .sw{height:92px;position:relative;overflow:hidden}
+  .skin .sw .s1{position:absolute;inset:0}
+  .skin .sw .s2{position:absolute;left:14px;bottom:14px;width:46%;height:12px;border-radius:6px}
+  .skin .sw .s3{position:absolute;left:14px;bottom:34px;width:62%;height:8px;border-radius:6px;opacity:.5}
+  .skin .cap{padding:9px 11px;font-size:var(--text-xs);color:oklch(20% 0 0);display:flex;align-items:center;justify-content:space-between}
+  .skin .cap small{color:oklch(50% 0 0)}
+  .skin.soon{opacity:.62;cursor:default}
+  .skin .soon-tag{position:absolute;top:8px;right:8px;padding:2px 8px;border-radius:999px;
+    background:oklch(20% 0 0 / .7);color:oklch(100% 0 0);font-size:11px}
+
+  /* 关于 */
+  .about-brand{display:flex;align-items:center;gap:14px;padding:6px 0 18px;border-bottom:1px solid var(--color-line);margin-bottom:6px}
+  .about-logo{width:56px;height:56px;flex:none;border-radius:15px;background:oklch(16% 0 0);color:oklch(100% 0 0);display:grid;place-items:center}
+  .about-logo svg{width:30px;height:30px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .about-brand h3{font-size:var(--text-lg);font-weight:650;color:oklch(16% 0 0)}
+  .about-brand p{font-size:var(--text-xs);color:oklch(50% 0 0);margin-top:3px}
+  .note{padding:12px 14px;border-radius:12px;background:oklch(97% 0 0);margin-bottom:10px;
+    font-size:var(--text-xs);color:oklch(42% 0 0);line-height:1.7}
+  .note b{color:oklch(20% 0 0)}
+  .linkrow{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--color-line);
+    font-size:var(--text-sm);color:oklch(30% 0 0)}
+  .linkrow .lk-ico{width:28px;height:28px;flex:none;border-radius:8px;background:oklch(94% 0 0);display:grid;place-items:center}
+  .linkrow .lk-ico svg{width:15px;height:15px;stroke:oklch(30% 0 0);stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .linkrow .lk-txt{flex:1;min-width:0}
+  .linkrow .lk-txt small{display:block;font-size:11px;color:oklch(50% 0 0);margin-top:2px}
+  .sponsor-entry{display:flex;align-items:center;gap:14px;width:100%;margin-top:6px;padding:16px 18px;
+    border:1px solid oklch(18% 0 0 / .16);border-radius:var(--radius-lg);background:oklch(98% 0 0);
+    cursor:pointer;text-align:left;transition:.2s;font-family:var(--font-sans)}
+  .sponsor-entry:hover{border-color:oklch(18% 0 0 / .4);background:oklch(96% 0 0)}
+  .sponsor-entry .sp-ico{width:40px;height:40px;flex:none;border-radius:11px;background:oklch(16% 0 0);color:oklch(100% 0 0);display:grid;place-items:center}
+  .sponsor-entry .sp-ico svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .sponsor-entry .sp-txt{flex:1}
+  .sponsor-entry .sp-txt b{display:block;font-size:var(--text-md);font-weight:650;color:oklch(18% 0 0)}
+  .sponsor-entry .sp-txt small{display:block;font-size:11px;color:oklch(50% 0 0);margin-top:3px}
+  .sponsor-entry .sp-arrow{color:oklch(50% 0 0)}
+  .sponsor-entry .sp-arrow svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+  /* —— 赞助独立弹窗 —— */
+  .sp-mask{position:absolute;inset:0;z-index:20;background:oklch(16% 0 0 / .42);
+    display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+  .sp-mask.show{display:flex}
+  .sp-modal{width:400px;max-width:90%;border-radius:20px;background:oklch(100% 0 0);
+    box-shadow:var(--shadow-lg);overflow:hidden;position:relative;transform:translateY(10px);transition:transform .26s}
+  .sp-mask.show .sp-modal{transform:translateY(0)}
+  .sp-modal .sp-hd{padding:20px 22px 14px;border-bottom:1px solid var(--color-line);position:relative}
+  .sp-modal .sp-hd h3{font-size:var(--text-lg);font-weight:650;color:oklch(16% 0 0)}
+  .sp-modal .sp-hd p{font-size:var(--text-xs);color:oklch(50% 0 0);margin-top:4px}
+  .sp-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;border:1px solid var(--color-line);
+    background:oklch(100% 0 0);color:oklch(42% 0 0);cursor:pointer;display:grid;place-items:center;transition:.2s}
+  .sp-close:hover{background:oklch(16% 0 0);color:oklch(100% 0 0)}
+  .sp-close svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round}
+  .sp-tabs{display:flex;gap:8px;padding:16px 22px 0}
+  .sp-tab{flex:1;height:34px;border-radius:10px;border:1px solid var(--color-line);background:oklch(100% 0 0);
+    color:oklch(46% 0 0);font-family:var(--font-sans);font-size:var(--text-sm);cursor:pointer;transition:.2s}
+  .sp-tab.on{background:oklch(16% 0 0);border-color:oklch(16% 0 0);color:oklch(100% 0 0);font-weight:600}
+  .sp-qrs{padding:16px 22px 8px;display:flex;justify-content:center}
+  .sp-qr{display:none;width:180px;height:180px;border:1px dashed oklch(20% 0 0 / .3);border-radius:14px;
+    background:repeating-linear-gradient(45deg,oklch(96% 0 0) 0 8px,oklch(93% 0 0) 8px 16px);
+    position:relative;align-items:center;justify-content:center}
+  .sp-qr.on{display:flex}
+  .sp-qr span{padding:8px 12px;border-radius:10px;background:oklch(100% 0 0 / .92);
+    font-size:var(--text-xs);color:oklch(30% 0 0);text-align:center}
+  .sp-foot{padding:6px 22px 20px;text-align:center;font-size:11px;color:oklch(50% 0 0);line-height:1.6}
+
+  /* —— 音源包管理（导入→保存→激活→展开平台）—— */
+  .import-box{border:1px solid var(--color-line);border-radius:var(--radius-lg);background:oklch(98% 0 0);padding:18px 20px;margin-bottom:16px}
+  .import-row{display:flex;gap:8px;align-items:center}
+  .import-row input{flex:1;min-width:0;height:38px;padding:0 12px;border:1px solid var(--color-line);border-radius:10px;
+    background:oklch(100% 0 0);font-family:var(--font-sans);font-size:var(--text-xs);color:oklch(20% 0 0)}
+  .import-row input::placeholder{color:oklch(52% 0 0)}
+  .import-hint{font-size:11px;color:oklch(50% 0 0);margin-top:9px}
+  .adv-toggle{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:var(--text-xs);
+    color:oklch(42% 0 0);cursor:pointer;background:none;border:0;font-family:var(--font-sans)}
+  .adv-toggle svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;transition:transform .2s}
+  .adv-toggle.open svg{transform:rotate(90deg)}
+  .adv-body{display:none;margin-top:10px}
+  .adv-body.open{display:block}
+
+  .srcpack{border:1px solid var(--color-line);border-radius:var(--radius-lg);background:oklch(100% 0 0);
+    margin-bottom:12px;overflow:hidden;transition:border-color .2s}
+  .srcpack:hover{border-color:oklch(18% 0 0 / .3)}
+  .spk-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none}
+  .spk-logo{width:40px;height:40px;flex:none;border-radius:11px;display:grid;place-items:center;color:oklch(100% 0 0);flex:none}
+  .spk-logo svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .spk-meta{flex:1;min-width:0}
+  .spk-meta b{display:block;font-size:var(--text-sm);font-weight:650;color:oklch(18% 0 0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .spk-meta small{display:block;font-size:11px;color:oklch(50% 0 0);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .spk-state{flex:none;padding:3px 11px;border-radius:999px;font-size:11px;font-weight:600}
+  .spk-state.on{background:oklch(16% 0 0);color:oklch(100% 0 0)}
+  .spk-state.off{background:oklch(94% 0 0);color:oklch(48% 0 0)}
+  .spk-act{width:30px;height:30px;flex:none;border-radius:8px;border:1px solid var(--color-line);background:oklch(100% 0 0);
+    color:oklch(44% 0 0);cursor:pointer;display:grid;place-items:center;transition:.2s}
+  .spk-act:hover{background:oklch(16% 0 0);color:oklch(100% 0 0);border-color:oklch(16% 0 0)}
+  .spk-act svg{width:16px;height:16px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .spk-caret{width:16px;height:16px;flex:none;stroke:oklch(50% 0 0);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:transform .22s}
+  .srcpack.open .spk-caret{transform:rotate(90deg)}
+  .spk-body{display:none;padding:0 16px 16px 68px;border-top:1px solid var(--color-line)}
+  .srcpack.open .spk-body{display:block}
+  .spk-desc{font-size:var(--text-xs);color:oklch(42% 0 0);line-height:1.7;padding:13px 0 10px}
+  .spk-kv{display:flex;gap:8px;font-size:11px;color:oklch(50% 0 0);padding:2px 0}
+  .spk-kv b{color:oklch(38% 0 0);font-weight:600;flex:none}
+  .spk-kv .u{color:oklch(46% 0 0);word-break:break-all}
+  .spk-plats{margin-top:12px;padding-top:12px;border-top:1px solid var(--color-line)}
+  .spk-plats .pl-hd{font-size:11px;color:oklch(50% 0 0);margin-bottom:9px;letter-spacing:.06em}
+  .pl-grid{display:flex;flex-wrap:wrap;gap:8px}
+  .pl-btn{height:32px;padding:0 13px;border-radius:9px;border:1px solid var(--color-line);background:oklch(100% 0 0);
+    color:oklch(30% 0 0);font-family:var(--font-sans);font-size:var(--text-xs);cursor:pointer;transition:.18s;
+    display:inline-flex;align-items:center;gap:6px}
+  .pl-btn:hover{background:oklch(16% 0 0);border-color:oklch(16% 0 0);color:oklch(100% 0 0)}
+  .pl-btn svg{width:12px;height:12px;fill:currentColor;stroke:none}
+
+  .bottom-wave{position:absolute;left:0;right:0;bottom:0;width:100%;height:88px;z-index:3;pointer-events:none;display:block}
+  .toast{position:absolute;left:50%;bottom:118px;transform:translateX(-50%) translateY(8px);z-index:9;
+    padding:10px 20px;border-radius:999px;background:oklch(16% 0 0);color:oklch(100% 0 0);
+    font-size:var(--text-xs);letter-spacing:.08em;opacity:0;transition:.28s;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="i-discover" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5v14M8 5v14M12 6l7-1.6v13.2L12 16"/><circle cx="5.5" cy="9" r="1"/><circle cx="5.5" cy="15" r="1"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1-2.1 2.1-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21h-3v-.1a1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3l-.1.1L6.8 17l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H5v-3h.1a1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8L6.8 7.1 8.9 5l.1.1a1.6 1.6 0 001.8.3 1.6 1.6 0 001-1.5V4h3v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1 2.1 2.1-.1.1a1.6 1.6 0 00-.3 1.8 1.6 1.6 0 001.5 1H21v3h-.1a1.6 1.6 0 00-1.5 1z"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4M21 12h0"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V10z"/><path d="M13 3v7h7"/></symbol>
+    <symbol id="i-eq" viewBox="0 0 24 24"><path d="M6 4v16M12 4v16M18 4v16"/><rect x="4" y="9" width="4" height="6" rx="1.5"/><rect x="10" y="5" width="4" height="6" rx="1.5"/><rect x="16" y="12" width="4" height="6" rx="1.5"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.6-9-9c-1.4-3.2 1-6 4-6 2 0 3.5 1.2 5 3 1.5-1.8 3-3 5-3 3 0 5.4 2.8 4 6-2 4.4-9 9-9 9z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.5.5l2-2A5 5 0 0012.5 4l-1 1"/><path d="M14 11a5 5 0 00-7.5-.5l-2 2A5 5 0 0011.5 20l1-1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+    <symbol id="i-playfill" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  </svg>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand"><b>Voiceprint</b><span>声纹音乐</span></div>
+      <p class="nav-label">浏览</p>
+      <nav class="nav">
+        <a data-view="首页"><svg><use href="#i-discover"/></svg>首页</a>
+        <a data-view="搜索"><svg><use href="#i-search"/></svg>搜索</a>
+        <a data-view="歌单"><svg><use href="#i-library"/></svg>歌单</a>
+        <a data-view="排行榜"><svg><use href="#i-chart"/></svg>排行榜</a>
+      </nav>
+      <div class="divider"></div>
+      <p class="nav-label">我的</p>
+      <nav class="nav">
+        <a data-view="沉浸模式"><svg><use href="#i-moon"/></svg>沉浸模式</a>
+        <a class="active" data-view="设置"><svg><use href="#i-settings"/></svg>设置</a>
+      </nav>
+      <div class="side-foot top-brand" title="Voiceprint 声纹音乐">
+        <span class="top-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4M21 12h0"/></svg></span>
+        <span class="top-brand-name">Voiceprint<span class="v">v1.0.0</span></span>
+        <a class="gh-link" href="https://github.com/" target="_blank" rel="noopener noreferrer" title="GitHub 仓库" aria-label="打开 GitHub 仓库">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 012-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <section class="main">
+      <header class="topbar">
+        <div class="chips" id="chips">
+          <button class="chip" data-view="首页">首页</button>
+          <button class="chip" data-view="搜索">搜索</button>
+          <button class="chip" data-view="歌单">歌单</button>
+          <button class="chip" data-view="排行榜">排行榜</button>
+          <button class="chip" data-view="沉浸模式">沉浸模式</button>
+          <button class="chip on" data-view="设置">设置</button>
+        </div>
+      </header>
+
+      <div class="content">
+        <div class="wrap">
+          <div class="page-head">
+            <div class="kicker">SETTINGS</div>
+            <h1>设置</h1>
+            <p>音质、音源、皮肤与关于 · 所有偏好都保存在本地</p>
+          </div>
+
+          <div class="set-layout">
+            <div class="group-nav" id="groupNav">
+              <button class="gnav on" data-panel="quality"><svg><use href="#i-wave"/></svg>音质</button>
+              <button class="gnav" data-panel="sources"><svg><use href="#i-folder"/></svg>音源管理</button>
+              <button class="gnav" data-panel="skins"><svg><use href="#i-moon"/></svg>皮肤管理</button>
+              <button class="gnav" data-panel="about"><svg><use href="#i-heart"/></svg>关于</button>
+            </div>
+
+            <!-- 音质 -->
+            <div class="panel on" id="p-quality">
+              <div class="card">
+                <div class="sec-hd"><span class="bar"></span><h2>播放音质</h2><span class="en">AUDIO QUALITY</span></div>
+                <div class="grid" id="qualityGrid">
+                  <button class="opt" data-q="标准"><span class="nm">标准</span><span class="ds">128 kbps · 省流量</span></button>
+                  <button class="opt" data-q="高品质"><span class="nm">高品质</span><span class="ds">320 kbps</span></button>
+                  <button class="opt on" data-q="无损"><span class="nm">无损</span><span class="ds">16bit / 44.1 kHz</span></button>
+                  <button class="opt" data-q="Hi-Res"><span class="nm">Hi-Res</span><span class="ds">24bit / 96 kHz</span></button>
+                </div>
+                <div style="margin-top:14px;font-size:11px;color:oklch(50% 0 0)">实际可用音质取决于音源；每个音源的优先级可在「音源管理」中单独设置。</div>
+              </div>
+              <div class="card">
+                <div class="sec-hd"><span class="bar"></span><h2>输出设备</h2><span class="en">OUTPUT</span></div>
+                <div class="row" id="deviceRow">
+                  <button class="opt on" data-dev="系统默认"><span class="nm">系统默认</span></button>
+                  <button class="opt" data-dev="内置扬声器"><span class="nm">内置扬声器</span></button>
+                  <button class="opt" data-dev="耳机"><span class="nm">耳机</span></button>
+                  <button class="opt" data-dev="蓝牙"><span class="nm">蓝牙</span></button>
+                  <button class="opt" data-dev="AirPlay"><span class="nm">AirPlay</span></button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="sec-hd"><span class="bar"></span><h2>播放行为</h2><span class="en">PLAYBACK</span></div>
+                <div class="setrow"><div class="sr-txt"><b>无缝播放</b><small>连续曲目之间不留空隙（Gapless）</small></div><label class="toggle"><input type="checkbox"></label></div>
+                <div class="setrow"><div class="sr-txt"><b>响度均衡</b><small>让不同歌曲音量保持一致（ReplayGain）</small></div><label class="toggle"><input type="checkbox" checked></label></div>
+                <div class="setrow"><div class="sr-txt"><b>记忆播放进度</b><small>下次打开时从上次的位置继续</small></div><label class="toggle"><input type="checkbox" checked></label></div>
+                <div class="setrow"><div class="sr-txt"><b>均衡器 EQ</b><small>在播放页调节 5 段均衡器与预设</small></div><button class="btn" id="eqEntry"><svg><use href="#i-eq"/></svg>打开 EQ</button></div>
+              </div>
+            </div>
+
+            <!-- 音源管理 -->
+            <div class="panel" id="p-sources">
+              <div class="card">
+                <div class="sec-hd"><span class="bar"></span><h2>本地音乐</h2><span class="en">LOCAL LIBRARY</span></div>
+                <div class="setrow"><div class="sr-txt"><b>导入本地歌曲</b><small>导入你自己的音乐，完全离线、无需登录、不上传任何数据</small></div><button class="btn" id="importLocal"><svg><use href="#i-file"/></svg>导入</button></div>
+              </div>
+              <div class="card">
+                <div class="sec-hd"><span class="bar"></span><h2>导入音源</h2><span class="en">IMPORT SOURCE</span></div>
+                <div class="import-box" style="margin-bottom:0">
+                  <div class="import-row">
+                    <input type="text" id="srcUrl" placeholder="粘贴音源链接（.js / 音源订阅地址）">
+                    <button class="btn primary" id="srcImport">导入并保存</button>
+                  </div>
+                  <div class="import-hint">导入后音源会保存在本地，激活后即可看到它自带的平台。</div>
+                  <button class="adv-toggle" id="advToggle"><svg viewBox="0 0 24 24"><use href="#i-chev"/></svg>高级导入</button>
+                  <div class="adv-body" id="advBody">
+                    <div class="import-row">
+                      <input type="text" placeholder="URL 导入不可用、或需要粘贴原始脚本时填这里">
+                      <button class="btn">粘贴原始</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="sec-hd"><span class="bar"></span><h2>已保存的音源</h2><span class="en">SAVED SOURCES</span><span class="tail">点击展开 · 激活后显示平台</span></div>
+                <div id="sourceList"></div>
+                <div style="margin-top:12px;font-size:11px;color:oklch(50% 0 0)">音源按列表顺序启用；可随时激活、停用或移除。</div>
+              </div>
+            </div>
+
+            <!-- 皮肤管理 -->
+            <div class="panel" id="p-skins">
+              <div class="card">
+                <div class="sec-hd"><span class="bar"></span><h2>当前皮肤</h2><span class="en">APPEARANCE</span></div>
+                <div class="skin-grid">
+                  <div class="skin on">
+                    <div class="sw"><div class="s1" style="background:oklch(100% 0 0)"></div><div class="s2" style="background:oklch(16% 0 0)"></div><div class="s3" style="background:oklch(70% 0 0)"></div></div>
+                    <div class="cap">象牙白 <small>使用中</small></div>
+                  </div>
+                  <div class="skin soon"><span class="soon-tag">即将推出</span>
+                    <div class="sw"><div class="s1" style="background:oklch(16% 0 0)"></div><div class="s2" style="background:oklch(88% .09 82)"></div><div class="s3" style="background:oklch(60% 0 0)"></div></div>
+                    <div class="cap">曜石黑 <small>敬请期待</small></div>
+                  </div>
+                  <div class="skin soon"><span class="soon-tag">即将推出</span>
+                    <div class="sw"><div class="s1" style="background:oklch(26% .05 250)"></div><div class="s2" style="background:oklch(80% .06 220)"></div><div class="s3" style="background:oklch(60% .04 230)"></div></div>
+                    <div class="cap">雾海蓝 <small>敬请期待</small></div>
+                  </div>
+                  <div class="skin soon"><span class="soon-tag">即将推出</span>
+                    <div class="sw"><div class="s1" style="background:oklch(96% .02 85)"></div><div class="s2" style="background:oklch(50% .08 70)"></div><div class="s3" style="background:oklch(72% .05 80)"></div></div>
+                    <div class="cap">暖杏 <small>敬请期待</small></div>
+                  </div>
+                </div>
+                <div style="margin-top:14px;font-size:11px;color:oklch(50% 0 0)">一套皮肤包含配色、字体、字号、圆角、图标风格与默认歌词样式，切换后全站同步。</div>
+              </div>
+              <div class="card">
+                <div class="sec-hd"><span class="bar"></span><h2>外观偏好</h2><span class="en">PREFERENCES</span></div>
+                <div class="setrow"><div class="sr-txt"><b>跟随系统深浅色</b><small>系统切换外观时自动适配</small></div><label class="toggle"><input type="checkbox"></label></div>
+                <div class="setrow"><div class="sr-txt"><b>自定义取色</b><small>从封面提取主题色（后续皮肤支持）</small></div><button class="btn" id="customColor">自定义</button></div>
+              </div>
+            </div>
+
+            <!-- 关于 -->
+            <div class="panel" id="p-about">
+              <div class="card">
+                <div class="about-brand">
+                  <div class="about-logo"><svg><use href="#i-wave"/></svg></div>
+                  <div><h3>Voiceprint 声纹音乐</h3><p>v1.0.0 · 让声音进入你的生活</p></div>
+                </div>
+                <div class="note"><b>开源声明</b><br>Voiceprint 声纹音乐是一款开源软件。动态歌词的部分视觉与交互思路借鉴自开源项目 Folia（chthollyphile/folia-major），并遵循其开源协议；在此向原作者致谢。</div>
+                <div class="note"><b>隐私说明</b><br>本项目不做账号注册、不建服务器。你的音乐、歌单、偏好与播放记录都保存在本地设备，不会上传。音源名称均使用谐音代称。</div>
+                <div class="note"><b>开源协议</b><br>具体许可证将在正式发布时确定（MIT / GPL / Apache 之一），届时以仓库 LICENSE 文件为准。</div>
+              </div>
+              <div class="card">
+                <div class="linkrow"><div class="lk-ico"><svg><use href="#i-link"/></svg></div><div class="lk-txt">开源仓库<small>查看源码、提交 Issue</small></div><a class="gh-link" href="https://github.com/" target="_blank" rel="noopener noreferrer" style="width:24px;height:24px;display:grid;place-items:center;color:oklch(50% 0 0)" aria-label="打开开源仓库"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round"><path d="M9 5l7 7-7 7"/></svg></a></div>
+                <div class="linkrow"><div class="lk-ico"><svg><use href="#i-wave"/></svg></div><div class="lk-txt">检查更新<small>当前版本 v1.0.0 · 设计稿演示</small></div><button class="btn" id="checkUpdate" style="height:30px;padding:0 12px">检查</button></div>
+              </div>
+              <button class="sponsor-entry" id="sponsorBtn">
+                <div class="sp-ico"><svg><use href="#i-heart"/></svg></div>
+                <div class="sp-txt"><b>赞助支持</b><small>如果这个软件帮到了你，可以请我们喝杯咖啡</small></div>
+                <div class="sp-arrow"><svg><use href="#i-chev"/></svg></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <canvas class="bottom-wave" id="bottomWave"></canvas>
+  <div class="toast" id="toast">制作中</div>
+
+  <!-- 赞助独立弹窗 -->
+  <div class="sp-mask" id="spMask">
+    <div class="sp-modal" role="dialog" aria-modal="true" aria-label="赞助支持">
+      <div class="sp-hd">
+        <h3>赞助支持</h3>
+        <p>感谢你的鼓励 · 请扫描下方二维码</p>
+        <button class="sp-close" id="spClose" aria-label="关闭"><svg><use href="#i-close"/></svg></button>
+      </div>
+      <div class="sp-tabs">
+        <button class="sp-tab on" data-sp="ali">支付宝</button>
+        <button class="sp-tab" data-sp="wx">微信支付</button>
+      </div>
+      <div class="sp-qrs">
+        <div class="sp-qr on" id="qrAli"><span>支付宝收款码<br>（实现阶段替换）</span></div>
+        <div class="sp-qr" id="qrWx"><span>微信收款码<br>（实现阶段替换）</span></div>
+      </div>
+      <div class="sp-foot">赞助不解锁任何功能，只是一份心意 · 感谢你的支持</div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // —— 全站菜单联动 ——
+  var VIEW_URL={'首页':'home.html','搜索':'search.html','歌单':'playlist.html','排行榜':'rank.html','沉浸模式':'immersive.html','设置':'settings.html'};
+  var chipEls=[].slice.call(document.querySelectorAll('.chip')),navEls=[].slice.call(document.querySelectorAll('.nav a'));
+  var toast=document.getElementById('toast'),toastTimer;
+  function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(function(){toast.classList.remove('show');},1500);}
+  function setView(label){
+    chipEls.forEach(function(c){c.classList.toggle('on',c.dataset.view===label);});
+    navEls.forEach(function(n){n.classList.toggle('active',n.dataset.view===label);});
+    if(label==='设置')return;
+    if(VIEW_URL[label]){location.href=VIEW_URL[label];}
+  }
+  chipEls.forEach(function(c){c.addEventListener('click',function(){setView(c.dataset.view);});});
+  navEls.forEach(function(n){n.addEventListener('click',function(){setView(n.dataset.view);});});
+
+  // —— 设置分组切换 ——
+  var gnavs=[].slice.call(document.querySelectorAll('.gnav')),panels=[].slice.call(document.querySelectorAll('.panel'));
+  gnavs.forEach(function(g){g.addEventListener('click',function(){
+    gnavs.forEach(function(x){x.classList.remove('on');});g.classList.add('on');
+    panels.forEach(function(p){p.classList.toggle('on',p.id==='p-'+g.dataset.panel);});
+    document.querySelector('.content').scrollTop=0;
+  });});
+
+  // —— 通用选项组高亮 ——
+  function bindGroup(sel,attr,cb){
+    var els=[].slice.call(document.querySelectorAll(sel));
+    els.forEach(function(b){b.addEventListener('click',function(){
+      els.forEach(function(x){x.classList.remove('on');});b.classList.add('on');if(cb)cb(b);
+    });});
+  }
+  bindGroup('#qualityGrid .opt',null,function(b){showToast('音质已设为 '+b.dataset.q);});
+  bindGroup('#deviceRow .opt',null,function(b){showToast('输出设备：'+b.dataset.dev);});
+
+  // —— 音源管理：导入→保存→激活→展开平台 ——
+  // 每个"音源"是一个可导入保存的音源包；激活后才暴露它自带的平台。
+  var PACKS=[
+    {n:'落屿音源',c:'oklch(56% .10 250)',v:'7',author:'w',on:true,open:false,
+     desc:'后续更新请关注公众号：落屿科技',
+     url:'https://raw.githubusercontent.com/pdone/lx-music-source/main/lx/latest.js',
+     plats:['萌狗音乐','暖窝音乐','本地音乐','蜜菇音乐','企鹅音乐','拾云音乐']},
+    {n:'星澜聚合音源',c:'oklch(52% .12 40)',v:'v4.0.2',author:'星澜团队',on:true,open:false,
+     desc:'星澜 v4.0.2 与墨澜 v2.3.6 融合版：落月企鹅 主线 + 云记（海棠）/HYWmusic/星海/念心 等备用后端，支持母带 / 全景声 / 汽水音乐',
+     url:'https://anhe-player.loc.cc/sources/89b50le4bd.js',
+     home:'https://github.com/your-repo/StellarWave',
+     plats:['萌狗音乐','暖窝音乐','蜜菇音乐','QS','企鹅音乐','拾云音乐']}
+  ];
+  var list=document.getElementById('sourceList');
+  function renderPacks(){
+    list.innerHTML='';
+    PACKS.forEach(function(pk,idx){
+      var el=document.createElement('div');
+      el.className='srcpack'+(pk.open?' open':'');
+      var platHtml=pk.plats.map(function(pl){return '<button class="pl-btn"><svg viewBox="0 0 24 24"><use href="#i-playfill"/></svg>'+pl+'</button>';}).join('');
+      var homeHtml=pk.home?'<div class="spk-kv"><b>主页</b><span class="u">'+pk.home+'</span></div>':'';
+      el.innerHTML=
+        '<div class="spk-head">'+
+          '<span class="spk-logo" style="background:'+pk.c+'"><svg viewBox="0 0 24 24"><path d="M6 4v16M12 4v16M18 4v16"/></svg></span>'+
+          '<span class="spk-meta"><b>'+pk.n+'</b><small>'+(pk.on?'已激活 · '+pk.plats.length+' 个平台':'未激活')+'</small></span>'+
+          '<span class="spk-state '+(pk.on?'on':'off')+'">'+(pk.on?'已启用':'未启用')+'</span>'+
+          '<button class="spk-act" data-act="toggle" title="'+(pk.on?'停用':'激活')+'"><svg><use href="#i-refresh"/></svg></button>'+
+          '<button class="spk-act" data-act="remove" title="移除"><svg><use href="#i-trash"/></svg></button>'+
+          '<svg class="spk-caret" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>'+
+        '</div>'+
+        '<div class="spk-body">'+
+          '<div class="spk-desc">'+pk.desc+'</div>'+
+          '<div class="spk-kv"><b>版本</b><span>'+pk.v+'</span></div>'+
+          '<div class="spk-kv"><b>作者</b><span>'+pk.author+'</span></div>'+
+          homeHtml+
+          '<div class="spk-kv"><b>地址</b><span class="u">'+pk.url+'</span></div>'+
+          (pk.on?'<div class="spk-plats"><div class="pl-hd">该音源提供的平台</div><div class="pl-grid">'+platHtml+'</div></div>':'<div class="spk-plats"><div class="pl-hd">激活后显示该音源自带的平台</div></div>')+
+        '</div>';
+      // 点击头部展开/收起
+      el.querySelector('.spk-head').addEventListener('click',function(e){
+        if(e.target.closest('.spk-act'))return;
+        pk.open=!pk.open;renderPacks();
+      });
+      // 激活 / 停用
+      el.querySelector('[data-act=toggle]').addEventListener('click',function(e){
+        e.stopPropagation();pk.on=!pk.on;renderPacks();
+        showToast(pk.on?'已激活「'+pk.n+'」':'已停用「'+pk.n+'」');
+      });
+      // 移除
+      el.querySelector('[data-act=remove]').addEventListener('click',function(e){
+        e.stopPropagation();PACKS.splice(idx,1);renderPacks();showToast('已移除「'+pk.n+'」');
+      });
+      // 平台播放
+      [].forEach.call(el.querySelectorAll('.pl-btn'),function(b){
+        b.addEventListener('click',function(){location.href='player.html';});
+      });
+      list.appendChild(el);
+    });
+  }
+  renderPacks();
+  // 导入并保存
+  document.getElementById('srcImport').addEventListener('click',function(){
+    var inp=document.getElementById('srcUrl'),v=inp.value.trim();
+    if(!v){showToast('请先粘贴音源链接');return;}
+    PACKS.push({n:'自定义音源 '+(PACKS.length+1),c:'oklch(52% .08 200)',v:'1.0',author:'本地导入',on:false,open:true,
+      desc:'从链接导入的音源，激活后可查看自带平台。',url:v,
+      plats:['企鹅音乐','拾云音乐','萌狗音乐']});
+    inp.value='';renderPacks();showToast('音源已保存，请激活后使用');
+  });
+  // 高级导入展开
+  var advT=document.getElementById('advToggle'),advB=document.getElementById('advBody');
+  advT.addEventListener('click',function(){advT.classList.toggle('open');advB.classList.toggle('open');});
+  document.getElementById('importLocal').addEventListener('click',function(){showToast('导入本地音乐 · 设计稿占位');});
+  document.getElementById('eqEntry').addEventListener('click',function(){showToast('均衡器在播放页中调节');});
+  document.getElementById('customColor').addEventListener('click',function(){showToast('自定义取色 · 后续皮肤支持');});
+  document.getElementById('checkUpdate').addEventListener('click',function(){showToast('设计稿演示 · 更新检查将在实现阶段接入');});
+
+  // —— 赞助独立弹窗 ——
+  var mask=document.getElementById('spMask');
+  function openSponsor(){mask.classList.add('show');}
+  function closeSponsor(){mask.classList.remove('show');}
+  document.getElementById('sponsorBtn').addEventListener('click',openSponsor);
+  document.getElementById('spClose').addEventListener('click',closeSponsor);
+  mask.addEventListener('click',function(e){if(e.target===mask)closeSponsor();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&mask.classList.contains('show'))closeSponsor();});
+  var spTabs=[].slice.call(document.querySelectorAll('.sp-tab')),qrs=[document.getElementById('qrAli'),document.getElementById('qrWx')];
+  spTabs.forEach(function(t){t.addEventListener('click',function(){
+    spTabs.forEach(function(x){x.classList.remove('on');});t.classList.add('on');
+    qrs.forEach(function(q,i){q.classList.toggle('on',i===(t.dataset.sp==='ali'?0:1));});
+  });});
+
+  // —— 底部声纹（与全站一致）——
+  var BPM=84,beatMs=60000/BPM;
+  function fit(cv){var dpr=Math.min(devicePixelRatio||1,2),w=cv.clientWidth,h=cv.clientHeight;
+    cv.width=w*dpr;cv.height=h*dpr;cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0);return {w:w,h:h};}
+  function pickColor(){var r=Math.random();
+    if(r<0.10)return{h:6,s:64,l:54};if(r<0.18)return{h:212,s:58,l:56};
+    if(r<0.24)return{h:32,s:60,l:55};return{h:230,s:0,l:44};}
+  var bw=document.getElementById('bottomWave'),bx=bw.getContext('2d'),W,BN=140,pts=[];
+  for(var j=0;j<BN;j++)pts.push({ph:Math.random()*6.28,sp:.4+Math.random()*.8,y:Math.random()*2-1,c:pickColor()});
+  function resize(){W=fit(bw);}
+  addEventListener('resize',resize);resize();
+  function drawWave(t){
+    bx.clearRect(0,0,W.w,W.h);
+    var sideW=206,avail=W.w-sideW,span=avail,x0=sideW,base=W.h*.62;
+    for(var i=0;i<BN;i++){
+      var p=pts[i],x=x0+span*i/(BN-1),env=Math.sin(Math.PI*i/(BN-1));
+      var breathe=.8+.2*Math.sin(t*.0005+p.ph*.3);
+      var beatPhase=(((t-(i%6)*26)%beatMs)+beatMs)%beatMs/beatMs,kick=Math.pow(1-beatPhase,2.2);
+      var a=Math.sin(i*.30+p.ph+t*.0009*p.sp)*Math.sin(i*.09-t*.0006+p.ph);
+      var envelope=Math.sin(i*.17-t*.0012)*Math.sin(i*.045+t*.0004);
+      var amp=env*breathe*(8+11*Math.abs(a)*(.4+1.2*kick));
+      var yy=base+envelope*amp+p.y*amp*.12,hh=2+Math.abs(a)*9*env*(.5+1.1*kick),col=p.c;
+      var al=Math.min(.68,.12+.26*env*breathe*(.5+.6*kick)+.08*Math.abs(a)+(col.s ? .22 : 0));
+      bx.strokeStyle='hsla('+col.h+','+col.s+'%,'+col.l+'%,'+al+')';bx.lineWidth=1;bx.lineCap='round';
+      bx.beginPath();bx.moveTo(x,yy-hh);bx.lineTo(x,yy+hh);bx.stroke();
+      bx.fillStyle='hsla('+col.h+','+col.s+'%,'+(col.l-4)+'%,'+(al*.9)+')';
+      bx.beginPath();bx.arc(x,yy,1+Math.abs(a)*1.4,0,6.28);bx.fill();
+    }
+  }
+  function frame(t){drawWave(t);requestAnimationFrame(frame);}
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
