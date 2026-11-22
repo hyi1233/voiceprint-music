@@ -17,7 +17,7 @@
   <a href="./screenshots/hero.png"><img width="100%" src="./screenshots/hero.png" alt="Voiceprint 界面预览"></a>
 </p>
 
-Voiceprint 是一款 MacBook Pro 音乐播放器的设计稿。听音乐，看歌词，就这样。
+Voiceprint 是一款 macOS 音乐播放器的设计稿。听音乐，看歌词，就这样。
 
 这是设计稿，不是能运行的软件：页面是静态 HTML，用来定下界面和动效的样子。
 
@@ -81,11 +81,16 @@ Voiceprint 是一款 MacBook Pro 音乐播放器的设计稿。听音乐，看�
 
 ## 未来
 
-这套设计接下来会做到：
+先从 macOS 开始，逐步开放和测试，再适配其他系统：
 
-- 安卓端
-- Windows 端
-- 车机
+- 平板
+- 桌面
+- Windows
+- 汽车
+- 电视
+- 手机
+
+一套设计，跟着声音走到不同设备上。
 
 ## 开源协议
 
