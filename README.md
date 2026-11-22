@@ -19,7 +19,7 @@
 
 Voiceprint 是一款 macOS 音乐播放器的设计稿。听音乐，看歌词，就这样。
 
-这是设计稿，不是能运行的软件：页面是静态 HTML，用来定下界面和动效的样子。
+这是设计稿，不是能运行的软件：页面是静态 HTML，用来定下界面和动效的样子，以后会有少量变化，具体的技术栈和编程语言还在思考中，下一步就是开始根据设计稿做我们的实体，希望有喜欢的朋友能给我点一个星星哦！
 
 ---
 
@@ -83,12 +83,7 @@ Voiceprint 是一款 macOS 音乐播放器的设计稿。听音乐，看歌词�
 
 先从 macOS 开始，逐步开放和测试，再适配其他系统：
 
-- 平板
-- 桌面
-- Windows
-- 汽车
-- 电视
-- 手机
+- 平板 - Windows - 车机 - 电视 - 手机
 
 一套设计，跟着声音走到不同设备上。
 
@@ -96,7 +91,7 @@ Voiceprint 是一款 macOS 音乐播放器的设计稿。听音乐，看歌词�
 
 本项目使用 [MIT 协议](./LICENSE)。
 
-动态歌词的设计思路参考了 [Folia](https://github.com/chthollyphile/folia-major)（AGPL-3.0），这里只借鉴视觉与交互方式，没有使用它的代码。音源模式参考了 [洛雪音乐](https://github.com/lyswhut/lx-music-desktop)。
+动态歌词的设计思路参考了 [Folia](https://github.com/chthollyphile/folia-major)（AGPL-3.0），这里只借鉴视觉与交互方式，没有使用它的代码。音源模式参考了 [落雪音乐](https://github.com/lyswhut/lx-music-desktop)。
 
 ## 状态
 
