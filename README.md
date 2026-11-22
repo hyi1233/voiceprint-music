@@ -16,7 +16,7 @@
   <a href="./screenshots/hero.png"><img width="100%" src="./screenshots/hero.png" alt="Voiceprint 界面预览：启动页 / 首页 / 播放页 / 全屏歌词"></a>
 </p>
 
-MacBook Pro 音乐播放器设计稿，12 屏，白底极简 + 动态歌词。
+Mac上的音乐播放器设计稿，12 屏，白底极简 + 动态歌词。（未来会有三端版本）
 
 这是设计稿，不是可运行的播放器：页面为静态 HTML/CSS + 少量演示 JS，用来确定视觉、动效和交互。真实音源、歌词内核、本地存储属于实现阶段，不在这里。
 
